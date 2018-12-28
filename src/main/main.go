@@ -85,7 +85,7 @@ func setMemoListHadnler(ctx context.Context) {
         fmt.Printf("TIME:%s --> 上报人:%s\t | 上报的列表:%#v\n",timeString,c.Name, c.MemoList)
 		staticMemoList = c.MemoList
 		lastSetName = c.Name
-		//db
+		//处理db
 		db, openError := sql.Open("mysql", "root:simon.1314@/memoryList?charset=utf8")//本地数据库用户名root,密码:simon.1314
 		util.CheckError(openError)
 		_, execError1 := db.Exec("DROP TABLE IF EXISTS memoList")
@@ -93,7 +93,7 @@ func setMemoListHadnler(ctx context.Context) {
 		_, execError2 := db.Exec("CREATE TABLE memoList(memo TEXT)")
 		util.CheckError(execError2)
 	
-		// 批量数据插入
+		//这边事物内批量数据插入
 		tx, dbError := db.Begin()
 		util.CheckError(dbError)
 		stmt, prepareError := tx.Prepare("INSERT memolist SET memo=?")
