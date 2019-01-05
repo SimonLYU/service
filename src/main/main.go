@@ -38,6 +38,7 @@ func main() {
 	// 用于设置闲置的连接数。
 	memoryDB.SetMaxIdleConns(50)
 	memoryDB.Ping()
+
 	// 查询多条数据
 	rows, queryError := memoryDB.Query("SELECT memo FROM memoList")
 	util.CheckError(queryError)
@@ -148,7 +149,7 @@ func setMemoListHadnler(ctx context.Context) {
 		//这边事物内批量数据插入
 		tx, dbError := db.Begin()
 		util.CheckError(dbError)
-		stmt, prepareError := tx.Prepare("INSERT memolist SET memo=?")
+		stmt, prepareError := tx.Prepare("INSERT memoList SET memo=?")
 		util.CheckError(prepareError)
 		for _, value := range  staticMemoList {
 			//emoji表情转码
