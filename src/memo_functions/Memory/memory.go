@@ -15,61 +15,70 @@ import (
 )
 
 func GetMemoListHadnler(ctx context.Context) {
-	memoryDB, openError := sql.Open("mysql", "root:simon.1314@/memoryList?charset=utf8")
-	Util.CheckError(openError)
-	defer memoryDB.Close() //函数末关闭数据库
-	// 设置最大打开的连接数，默认值为0表示不限制。
-	memoryDB.SetMaxOpenConns(100)
-	// 用于设置闲置的连接数。
-	memoryDB.SetMaxIdleConns(50)
-	memoryDB.Ping()
-	//初始化数据库
-	_, _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS memoList(memo TEXT)")
-	_, _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS lastSetName(name TEXT)")
+	c := &MemoryModel.GetMemory{}
+	if err := ctx.ReadJSON(c); err != nil {
+		panic(err.Error())
+	} else {
+		databaseName := c.DatabaseName
+		databaseName = "memoList" //ceshi...
+		if len(databaseName) <= 0 {
+			fmt.Printf("databaseName为空!")
+			return
+		}
 
-	var staticMemoList []string
-	var lastSetName string
-	// 查询多条数据
-	rows, queryError := memoryDB.Query("SELECT memo FROM memoList")
-	Util.CheckError(queryError)
-	// 对多条数据进行遍历
-	var memo string
-	for rows.Next() {
-		scanError := rows.Scan(&memo)
-		Util.CheckError(scanError)
-		//emoji表情解码
+		memoryDB, openError := sql.Open("mysql", "root:simon.1314@/memory?charset=utf8")
+		Util.CheckError(openError)
+		defer memoryDB.Close() //函数末关闭数据库
+		// 设置最大打开的连接数，默认值为0表示不限制。
+		memoryDB.SetMaxOpenConns(100)
+		// 用于设置闲置的连接数。
+		memoryDB.SetMaxIdleConns(50)
+		memoryDB.Ping()
+		//初始化数据库
+		create := "CREATE TABLE IF NOT EXISTS "
+		create += databaseName
+		create += "(memo TEXT , name TEXT)"
+		_, _ = memoryDB.Exec(create)
+
+		var staticMemoList []string
+		var lastSetName string
+		// 查询多条数据
+		selectExec := "SELECT memo,name FROM "
+		selectExec += databaseName
+		rows, queryError := memoryDB.Query(selectExec)
+		Util.CheckError(queryError)
+		// 对多条数据进行遍历
+		var memo, name string
+		for rows.Next() {
+			scanError := rows.Scan(&memo, &name)
+			Util.CheckError(scanError)
+			//emoji表情解码
+			fullTimeString := time.Now().String()
+			timeString := fullTimeString[:19]
+			fmt.Printf("TIME:%s --> 解码前数据:%s\n", timeString, memo)
+			memo = Util.UnicodeEmojiDecode(memo)
+			fullTimeString = time.Now().String()
+			timeString = fullTimeString[:19]
+			fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, memo)
+
+			staticMemoList = append(staticMemoList, memo)
+		}
+
+		lastSetName = Util.UnicodeEmojiDecode(name)
+
+		nullMemoList := []string{}
+		var currentMemoList []string
+		if len(staticMemoList) <= 0 {
+			currentMemoList = nullMemoList
+		} else {
+			currentMemoList = staticMemoList
+		}
+
 		fullTimeString := time.Now().String()
 		timeString := fullTimeString[:19]
-		fmt.Printf("TIME:%s --> 解码前数据:%s\n", timeString, memo)
-		memo = Util.UnicodeEmojiDecode(memo)
-		fullTimeString = time.Now().String()
-		timeString = fullTimeString[:19]
-		fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, memo)
-
-		staticMemoList = append(staticMemoList, memo)
+		fmt.Printf("TIME:%s --> 购物车最后上报人:%s\t | 响应的列表:%s\n", timeString, lastSetName, currentMemoList)
+		ctx.JSON(iris.Map{"name": lastSetName, "memoList": currentMemoList})
 	}
-
-	nameRows, queryError := memoryDB.Query("SELECT name FROM lastSetName")
-	Util.CheckError(queryError)
-	var name string
-	for nameRows.Next() {
-		scanError := nameRows.Scan(&name)
-		Util.CheckError(scanError)
-		lastSetName = Util.UnicodeEmojiDecode(name)
-	}
-
-	nullMemoList := []string{}
-	var currentMemoList []string
-	if len(staticMemoList) <= 0 {
-		currentMemoList = nullMemoList
-	} else {
-		currentMemoList = staticMemoList
-	}
-
-	fullTimeString := time.Now().String()
-	timeString := fullTimeString[:19]
-	fmt.Printf("TIME:%s --> 购物车最后上报人:%s\t | 响应的列表:%s\n", timeString, lastSetName, currentMemoList)
-	ctx.JSON(iris.Map{"name": lastSetName, "memoList": currentMemoList})
 }
 
 func SetMemoListHadnler(ctx context.Context) {
@@ -82,8 +91,14 @@ func SetMemoListHadnler(ctx context.Context) {
 		fmt.Printf("TIME:%s --> 购物车上报人:%s\t | 上报的列表:%#v\n", timeString, c.Name, c.MemoList)
 		staticMemoList := c.MemoList
 		lastSetName := c.Name
+		databaseName := c.DatabaseName
+		databaseName = "memoList" //ceshi...
+		if len(databaseName) <= 0 {
+			fmt.Printf("databaseName为空!")
+			return
+		}
 		//处理db
-		db, openError := sql.Open("mysql", "root:simon.1314@/memoryList?charset=utf8") //本地数据库用户名root,密码:simon.1314
+		db, openError := sql.Open("mysql", "root:simon.1314@/memory?charset=utf8") //本地数据库用户名root,密码:simon.1314
 		Util.CheckError(openError)
 		defer db.Close() //函数末关闭数据库
 
@@ -92,21 +107,29 @@ func SetMemoListHadnler(ctx context.Context) {
 		// 用于设置闲置的连接数。
 		db.SetMaxIdleConns(50)
 		db.Ping()
-		_, execError1 := db.Exec("DROP TABLE IF EXISTS memoList")
+		drop := "DROP TABLE IF EXISTS "
+		drop += databaseName
+		_, execError1 := db.Exec(drop)
 		Util.CheckError(execError1)
-		_, execError2 := db.Exec("CREATE TABLE memoList(memo TEXT)")
+		create := "CREATE TABLE "
+		create += databaseName
+		create += "(memo TEXT , name TEXT)"
+		_, execError2 := db.Exec(create)
 		Util.CheckError(execError2)
 
 		//这边事物内批量数据插入
 		tx, dbError := db.Begin()
 		Util.CheckError(dbError)
-		stmt, prepareError := tx.Prepare("INSERT memoList SET memo=?")
+		insert := "INSERT INTO "
+		insert += databaseName
+		insert += "(memo,name) values(?,?)"
+		stmt, prepareError := tx.Prepare(insert)
 		Util.CheckError(prepareError)
 		for _, value := range staticMemoList {
 			//emoji表情转码
 			value = Util.UnicodeEmojiCode(value)
 
-			_, err := stmt.Exec(value)
+			_, err := stmt.Exec(value, lastSetName)
 			if err != nil {
 				fullTimeString := time.Now().String()
 				timeString := fullTimeString[:19]
@@ -115,16 +138,6 @@ func SetMemoListHadnler(ctx context.Context) {
 			}
 		}
 		tx.Commit()
-
-		//更新上报人
-		_, execError3 := db.Exec("DROP TABLE IF EXISTS lastSetName")
-		Util.CheckError(execError3)
-		_, execError4 := db.Exec("CREATE TABLE lastSetName(name TEXT)")
-		Util.CheckError(execError4)
-		updateStmt, updateError := db.Prepare("INSERT INTO lastSetName(name) VALUES(?)")
-		Util.CheckError(updateError)
-		_, execUpdateErr := updateStmt.Exec(Util.UnicodeEmojiCode(lastSetName))
-		Util.CheckError(execUpdateErr)
 
 		ctx.JSON(iris.Map{"name": lastSetName, "memoList": staticMemoList})
 	}

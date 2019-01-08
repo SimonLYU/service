@@ -1,9 +1,12 @@
 package User
 
 import (
+	"math/rand"
+	"time"
+	"fmt"
+
 	"User/UserModel"
 	"Util"
-	"fmt"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
@@ -17,14 +20,16 @@ func RegisterHanlder(ctx context.Context) {
 	c := &UserModel.User{}
 	name := Util.UnicodeEmojiCode(c.Name)
 	account := Util.UnicodeEmojiCode(c.Account)
-	databaseName := account//默认
+	databaseName := "memoryList"//默认
+	databaseName += account//默认
 	password := Util.UnicodeEmojiCode(c.Password)
-
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	inviteCode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
 			//ceshi...
-			// name = "111"
-			// account = "12312333"
-			// password = "12312333"
-			// databaseName = account
+			name = "111"
+			account = "1231233312"
+			password = "12312333"
+			databaseName = account
 			//ceshi over
 
 	if err := ctx.ReadJSON(c); err != nil {
@@ -44,22 +49,23 @@ func RegisterHanlder(ctx context.Context) {
 		usersDB.SetMaxIdleConns(50)
 		usersDB.Ping()
 		//初始化数据库
-		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT)")
+		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT,inviteCode TEXT)")
 		// 查询单条数据
-		row := usersDB.QueryRow("select * from users where account = ?", account)
-		var searchAccount , searchPassword , searchName , searchDatabaseName string
-		err = row.Scan(&searchName, &searchDatabaseName , &searchAccount,&searchPassword) //遍历结果
-		if err == nil {
+		row := usersDB.QueryRow("SELECT account FROM users WHERE account = ?", account)
+		var searchAccount string
+		err = row.Scan(&searchAccount) //遍历结果
+		if err == nil && len(searchAccount) > 0 {//查到了
 			fmt.Printf("手机号已经被注册\n")
 			ctx.JSON(iris.Map{"errorCode": "501", "message": "手机号已经被注册"})
 		} else {
-			_, err := usersDB.Exec("insert into users(name, databaseName, account, password) values(?,?,?,?)", name, databaseName, account, password) //插入数据
+			_, err := usersDB.Exec("INSERT INTO users(name, databaseName, account, password,inviteCode) VALUES(?,?,?,?,?)", name, databaseName, account, password,inviteCode) //插入数据
 			if err == nil {
-				fmt.Printf("注册成功,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\n", name, databaseName, account, password)
+				fmt.Printf("注册成功,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\n", name, databaseName, account, password,inviteCode)
 				ctx.JSON(iris.Map{"errorCode": "0", "message": "注册成功"})
 			} else {
 				fmt.Printf("注册失败:数据库插入失败\n")
 				ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败"})
+				Util.CheckError(err)
 			}
 		}
 	}

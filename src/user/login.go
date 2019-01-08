@@ -17,11 +17,10 @@ func LoginHanlder(ctx context.Context) {
 	account := c.Account
 	password := c.Password
 
-
-		//ceshi...
-		// account = "123123"
-		// password = "123123"
-		//ceshi over
+	//ceshi...
+	// account = "123123"
+	// password = "123123"
+	//ceshi over
 
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
@@ -42,20 +41,19 @@ func LoginHanlder(ctx context.Context) {
 		// 初始化数据库
 		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT)")
 		// 查询多条数据
-		row := usersDB.QueryRow("select * from users where account = ? and password = ?", account, password)
-		var searchAccount , searchPassword , searchName , searchDatabaseName string
-		err = row.Scan(&searchName, &searchDatabaseName , &searchAccount,&searchPassword) //遍历结果
+		row := usersDB.QueryRow("SELECT name,databaseName,account FROM users WHERE account = ? AND password = ?", account, password)
+		var searchAccount, searchName, searchDatabaseName string
+		err = row.Scan(&searchName, &searchDatabaseName, &searchAccount) //遍历结果
 		searchAccount = Util.UnicodeEmojiDecode(searchAccount)
-		searchPassword = Util.UnicodeEmojiDecode(searchPassword)
 		searchName = Util.UnicodeEmojiDecode(searchName)
 		searchDatabaseName = Util.UnicodeEmojiDecode(searchDatabaseName)
 		Util.CheckError(err)
-		if err == nil{
-			fmt.Printf("登录成功,name:%s\nacount:%s\ndatabaseName:%s\n",searchName,searchAccount,searchDatabaseName)
-			ctx.JSON(iris.Map{"errorCode": "0", "message": "登录成功" , "name":searchName,"account":searchAccount,"databaseName":searchDatabaseName})
-		}else{
+		if err == nil {
+			fmt.Printf("登录成功,name:%s\nacount:%s\ndatabaseName:%s\n", searchName, searchAccount, searchDatabaseName)
+			ctx.JSON(iris.Map{"errorCode": "0", "message": "登录成功", "name": searchName, "account": searchAccount, "databaseName": searchDatabaseName})
+		} else {
 			fmt.Printf("登录失败,用户名或密码错误\n")
-			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:用户名或密码错误" , "name":"","account":"","databaseName":""})
-		}	
+			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:用户名或密码错误", "name": "", "account": "", "databaseName": ""})
+		}
 	}
 }
