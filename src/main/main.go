@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"Utils/util"
+	"user"
 
     "github.com/kataras/iris"
 	"github.com/kataras/iris/context"
@@ -29,6 +30,7 @@ var staticAccountList []string
 var lastUpdateAccountName string
 
 func main() {
+
 	memoryDB, openError := sql.Open("mysql", "root:simon.1314@/memoryList?charset=utf8")
 	util.CheckError(openError)
 	defer memoryDB.Close()//函数末关闭数据库
@@ -38,6 +40,11 @@ func main() {
 	// 用于设置闲置的连接数。
 	memoryDB.SetMaxIdleConns(50)
 	memoryDB.Ping()
+	//初始化DB
+	_ , _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS memoList(memo TEXT)")
+	_ , _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS accountList(info TEXT)")
+	_ , _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS lastSetName(name TEXT)")
+	_ , _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS lastUpdateAccountName(name TEXT)")
 
 	// 查询多条数据
 	rows, queryError := memoryDB.Query("SELECT memo FROM memoList")
@@ -79,7 +86,6 @@ func main() {
 		staticAccountList = append(staticAccountList, info)
 	}
 
-
 	nameRows, queryError := memoryDB.Query("SELECT name FROM lastSetName")
 	util.CheckError(queryError)
 	var name string
@@ -89,7 +95,7 @@ func main() {
 		lastSetName = util.UnicodeEmojiDecode(name);
 	}
 
-	nameAccountRows, queryAccountError := memoryDB.Query("SELECT name FROM lastSetName")
+	nameAccountRows, queryAccountError := memoryDB.Query("SELECT name FROM lastUpdateAccountName")
 	util.CheckError(queryAccountError)
 	var accountName string
 	for nameAccountRows.Next() {
@@ -117,7 +123,7 @@ func getMemoListHadnler(ctx context.Context) {
 
 	fullTimeString := time.Now().String()
 	timeString := fullTimeString[:19]
-	fmt.Printf("TIME:%s --> 最后上报人:%s\t | 响应的列表:%s\n", timeString,lastSetName,currentMemoList)
+	fmt.Printf("TIME:%s --> 购物车最后上报人:%s\t | 响应的列表:%s\n", timeString,lastSetName,currentMemoList)
 	ctx.JSON(iris.Map{"name": lastSetName , "memoList" : currentMemoList})
 }
 
@@ -128,7 +134,7 @@ func setMemoListHadnler(ctx context.Context) {
     } else {
 		fullTimeString := time.Now().String()
 		timeString := fullTimeString[:19]
-        fmt.Printf("TIME:%s --> 上报人:%s\t | 上报的列表:%#v\n",timeString,c.Name, c.MemoList)
+        fmt.Printf("TIME:%s --> 购物车上报人:%s\t | 上报的列表:%#v\n",timeString,c.Name, c.MemoList)
 		staticMemoList = c.MemoList
 		lastSetName = c.Name
 		//处理db
@@ -187,7 +193,7 @@ func updateAccountListHandler(ctx context.Context){
     } else {
 		fullTimeString := time.Now().String()
 		timeString := fullTimeString[:19]
-        fmt.Printf("TIME:%s --> 上报人:%s\t | 上报的列表:%#v\n",timeString,c.Name, c.AccountList)
+        fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报的列表:%#v\n",timeString,c.Name, c.AccountList)
 		staticAccountList = c.AccountList
 		lastUpdateAccountName = c.Name
 		fmt.Printf("static = %s\n\n",c)
@@ -250,7 +256,7 @@ func getAccountListHadnler(ctx context.Context) {
 
 	fullTimeString := time.Now().String()
 	timeString := fullTimeString[:19]
-	fmt.Printf("TIME:%s --> 最后上报人:%s\t | 响应的列表:%s\n", timeString,lastUpdateAccountName,currentAccountList)
+	fmt.Printf("TIME:%s --> 账本最后上报人:%s\t | 响应的列表:%s\n", timeString,lastUpdateAccountName,currentAccountList)
 	ctx.JSON(iris.Map{"name": lastUpdateAccountName , "accountList" : currentAccountList})
 }
 
@@ -264,6 +270,10 @@ func postForMemoListApp(){
 	app.Post("/updateAccountList", updateAccountListHandler)
 	//获取账单列表
 	app.Post("/getAccountList", getAccountListHadnler)
+	//登录
+	app.Post("/login", user.LoginHanlder)
+	//注册
+	app.Post("/register", user.RegisterHanlder)
     app.Run(iris.Addr(":8080"))
 }
 
