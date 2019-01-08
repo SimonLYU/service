@@ -46,6 +46,7 @@ func main() {
 	_ , _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS lastSetName(name TEXT)")
 	_ , _ = memoryDB.Exec("CREATE TABLE IF NOT EXISTS lastUpdateAccountName(name TEXT)")
 
+	s
 	// 查询多条数据
 	rows, queryError := memoryDB.Query("SELECT memo FROM memoList")
 	util.CheckError(queryError)
