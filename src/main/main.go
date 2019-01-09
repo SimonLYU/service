@@ -29,8 +29,8 @@ func main() {
 func postForMemoListApp(){
 	app := iris.New()
 	//获取备忘录列表
-	// app.Post("/getMemoList", Memory.GetMemoListHadnler)
-	app.Post("/getMemoList", User.RegisterHanlder)
+	app.Post("/getMemoList", Memory.GetMemoListHadnler)
+	// app.Post("/getMemoList", User.RegisterHanlder)
 	//全量更新备忘录列表
 	app.Post("/setMemoList", Memory.SetMemoListHadnler)
 	//全量更新账单列表

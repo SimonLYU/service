@@ -26,7 +26,7 @@ func UpdateAccountListHandler(ctx context.Context) {
 		staticAccountList := c.AccountList
 		lastUpdateAccountName := c.Name
 		databaseName := c.DatabaseName
-		databaseName = "accountList" //ceshi...
+		// databaseName = "accountList" //ceshi...
 		if len(databaseName) <= 0 {
 			fmt.Printf("databaseName为空!")
 			return
@@ -82,9 +82,8 @@ func GetAccountListHadnler(ctx context.Context) {
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-
 		databaseName := c.DatabaseName
-		databaseName = "accountList" //ceshi...
+		// databaseName = "accountList" //ceshi...
 		if len(databaseName) <= 0 {
 			fmt.Printf("databaseName为空!")
 			return

@@ -1,9 +1,9 @@
 package User
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
-	"fmt"
 
 	"User/UserModel"
 	"Util"
@@ -18,26 +18,35 @@ import (
 func RegisterHanlder(ctx context.Context) {
 
 	c := &UserModel.User{}
-	name := Util.UnicodeEmojiCode(c.Name)
-	account := Util.UnicodeEmojiCode(c.Account)
-	databaseName := "memoryList"//默认
-	databaseName += account//默认
-	password := Util.UnicodeEmojiCode(c.Password)
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	inviteCode := fmt.Sprintf("%06v", rnd.Int31n(1000000))
-			//ceshi...
-			name = "111"
-			account = "1231233312"
-			password = "12312333"
-			databaseName = account
-			//ceshi over
 
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-		if len(password) == 0 || len(account) == 0 || len(name) == 0  {
+		name := Util.UnicodeEmojiCode(c.Name)
+		account := Util.UnicodeEmojiCode(c.Account)
+		password := Util.UnicodeEmojiCode(c.Password)
+		linkAccount := Util.UnicodeEmojiCode(c.LinkAccount)
+		linkInviteCode := Util.UnicodeEmojiCode(c.LinkInviteCode)
+		fmt.Printf("--%s,%s\n", linkAccount, linkInviteCode)
+		//默认根据account生成本人的数据库
+		databaseName := "dbn_"
+		databaseName += account
+		//默认使用自己的db,link名字为自己
+		linkName := name
+		//随机生成邀请码
+		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+		inviteCode := Util.UnicodeEmojiCode(fmt.Sprintf("%06v", rnd.Int31n(1000000)))
+
+		//ceshi...
+		// name = "111"
+		// account = "1231233312"
+		// password = "12312333"
+		// databaseName = account
+		//ceshi over
+
+		if len(password) == 0 || len(account) == 0 || len(name) == 0 {
 			fmt.Printf("注册失败:不能为空\n")
-			ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败:信息不完整"})
+			ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败:信息不完整", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 			return
 		}
 		usersDB, openError := sql.Open("mysql", "root:simon.1314@/users?charset=utf8")
@@ -49,23 +58,50 @@ func RegisterHanlder(ctx context.Context) {
 		usersDB.SetMaxIdleConns(50)
 		usersDB.Ping()
 		//初始化数据库
-		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT,inviteCode TEXT)")
+		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT,inviteCode TEXT,linkName TEXT)")
 		// 查询单条数据
 		row := usersDB.QueryRow("SELECT account FROM users WHERE account = ?", account)
 		var searchAccount string
-		err = row.Scan(&searchAccount) //遍历结果
-		if err == nil && len(searchAccount) > 0 {//查到了
+		err = row.Scan(&searchAccount)            //遍历结果
+		if err == nil && len(searchAccount) > 0 { //查到了
 			fmt.Printf("手机号已经被注册\n")
-			ctx.JSON(iris.Map{"errorCode": "501", "message": "手机号已经被注册"})
+			ctx.JSON(iris.Map{"errorCode": "501", "message": "手机号已经被注册", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
+			return
 		} else {
-			_, err := usersDB.Exec("INSERT INTO users(name, databaseName, account, password,inviteCode) VALUES(?,?,?,?,?)", name, databaseName, account, password,inviteCode) //插入数据
+			if len(linkAccount) != 0 && len(linkInviteCode) != 0 {
+				row := usersDB.QueryRow("SELECT account,name,databaseName,inviteCode FROM users WHERE account = ?", linkAccount)
+				var searchLinkAccount, searchLinkName, searchLinkDatabase, searchLinkInviteCode string
+				err = row.Scan(&searchLinkAccount, &searchLinkName, &searchLinkDatabase, &searchLinkInviteCode) //遍历结果
+				if err == nil {                                                                                 //查到了
+					if searchLinkInviteCode == linkInviteCode {
+						linkName = searchLinkName
+						databaseName = searchLinkDatabase
+					} else {
+						fmt.Printf("link邀请码不正确\n")
+						ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
+						return
+					}
+
+				} else {
+					fmt.Printf("link信息未查到\n")
+					ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
+					return
+				}
+			} else if (len(linkAccount) == 0 && len(linkInviteCode) != 0) || len(linkAccount) != 0 && len(linkInviteCode) == 0 {
+				fmt.Printf("link填写不完整\n")
+				ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
+				return
+			}
+
+			_, err := usersDB.Exec("INSERT INTO users(name, databaseName, account, password,inviteCode,linkName) VALUES(?,?,?,?,?,?)", name, databaseName, account, password, inviteCode, linkName) //插入数据
 			if err == nil {
-				fmt.Printf("注册成功,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\n", name, databaseName, account, password,inviteCode)
-				ctx.JSON(iris.Map{"errorCode": "0", "message": "注册成功"})
+				fmt.Printf("注册成功,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
+				ctx.JSON(iris.Map{"errorCode": "0", "message": "注册成功,请登录", "name": name, "account": account, "databaseName": databaseName, "inviteCode": inviteCode, "linkName": linkName})
+				return
 			} else {
 				fmt.Printf("注册失败:数据库插入失败\n")
-				ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败"})
-				Util.CheckError(err)
+				ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
+				return
 			}
 		}
 	}

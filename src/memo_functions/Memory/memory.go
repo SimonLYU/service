@@ -20,7 +20,7 @@ func GetMemoListHadnler(ctx context.Context) {
 		panic(err.Error())
 	} else {
 		databaseName := c.DatabaseName
-		databaseName = "memoList" //ceshi...
+		// databaseName = "memoList" //ceshi...
 		if len(databaseName) <= 0 {
 			fmt.Printf("databaseName为空!")
 			return
@@ -92,7 +92,7 @@ func SetMemoListHadnler(ctx context.Context) {
 		staticMemoList := c.MemoList
 		lastSetName := c.Name
 		databaseName := c.DatabaseName
-		databaseName = "memoList" //ceshi...
+		// databaseName = "memoList" //ceshi...
 		if len(databaseName) <= 0 {
 			fmt.Printf("databaseName为空!")
 			return

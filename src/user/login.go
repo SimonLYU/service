@@ -14,9 +14,6 @@ import (
 
 func LoginHanlder(ctx context.Context) {
 	c := &UserModel.User{}
-	account := c.Account
-	password := c.Password
-
 	//ceshi...
 	// account = "123123"
 	// password = "123123"
@@ -25,9 +22,11 @@ func LoginHanlder(ctx context.Context) {
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-		if len(password) == 0 || len(account) == 0 {
-			fmt.Printf("登录失败:不能为空\n")
-			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:信息不完整"})
+		account := c.Account
+		password := c.Password
+		fmt.Printf("登录请求->\nacount:%s\npassword:%s\n", account, password)
+		if len(account) == 0 || len(password) == 0 {
+			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:信息不完整", "name": "", "account": "", "databaseName": "","inviteCode":"","linkName":""})
 			return
 		}
 		usersDB, openError := sql.Open("mysql", "root:simon.1314@/users?charset=utf8")
@@ -39,21 +38,23 @@ func LoginHanlder(ctx context.Context) {
 		usersDB.SetMaxIdleConns(50)
 		usersDB.Ping()
 		// 初始化数据库
-		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT)")
+		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT,inviteCode TEXT,linkName TEXT)")
 		// 查询多条数据
-		row := usersDB.QueryRow("SELECT name,databaseName,account FROM users WHERE account = ? AND password = ?", account, password)
-		var searchAccount, searchName, searchDatabaseName string
-		err = row.Scan(&searchName, &searchDatabaseName, &searchAccount) //遍历结果
+		row := usersDB.QueryRow("SELECT name,databaseName,account,inviteCode,linkName FROM users WHERE account = ? AND password = ?", account, password)
+		var searchAccount, searchName, searchDatabaseName,searchInviteCode,searchLinkName string
+		err = row.Scan(&searchName, &searchDatabaseName, &searchAccount , &searchInviteCode,&searchLinkName) //遍历结果
 		searchAccount = Util.UnicodeEmojiDecode(searchAccount)
 		searchName = Util.UnicodeEmojiDecode(searchName)
 		searchDatabaseName = Util.UnicodeEmojiDecode(searchDatabaseName)
-		Util.CheckError(err)
+		searchInviteCode = Util.UnicodeEmojiDecode(searchInviteCode)
+		searchLinkName = Util.UnicodeEmojiDecode(searchLinkName)
+		// Util.CheckError(err)
 		if err == nil {
-			fmt.Printf("登录成功,name:%s\nacount:%s\ndatabaseName:%s\n", searchName, searchAccount, searchDatabaseName)
-			ctx.JSON(iris.Map{"errorCode": "0", "message": "登录成功", "name": searchName, "account": searchAccount, "databaseName": searchDatabaseName})
+			fmt.Printf("登录成功,name:%s\nacount:%s\ndatabaseName:%s\ninviteCode:%s\nlinkName:%s\n", searchName, searchAccount, searchDatabaseName,searchInviteCode,searchLinkName)
+			ctx.JSON(iris.Map{"errorCode": "0", "message": "登录成功", "name": searchName, "account": searchAccount, "databaseName": searchDatabaseName,"inviteCode":searchInviteCode,"linkName":searchLinkName})
 		} else {
 			fmt.Printf("登录失败,用户名或密码错误\n")
-			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:用户名或密码错误", "name": "", "account": "", "databaseName": ""})
+			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:用户名或密码错误", "name": "", "account": "", "databaseName": "","inviteCode":"","linkName":""})
 		}
 	}
 }
