@@ -70,13 +70,13 @@ func RegisterHanlder(ctx context.Context) {
 						linkName = searchLinkName
 						databaseName = searchLinkDatabase
 					} else {
-						fmt.Printf("link邀请码不正确\n")
+						fmt.Printf("link邀请码不正确,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 						ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 						return
 					}
 
 				} else {
-					fmt.Printf("link信息未查到\n")
+					fmt.Printf("link信息未查到,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 					ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 					return
 				}
@@ -92,7 +92,7 @@ func RegisterHanlder(ctx context.Context) {
 				ctx.JSON(iris.Map{"errorCode": "0", "message": "注册成功,请登录", "name": name, "account": account, "databaseName": databaseName, "inviteCode": inviteCode, "linkName": linkName})
 				return
 			} else {
-				fmt.Printf("注册失败:数据库插入失败\n")
+				fmt.Printf("注册失败,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 				ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 				return
 			}
