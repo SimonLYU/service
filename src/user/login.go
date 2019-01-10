@@ -14,10 +14,6 @@ import (
 
 func LoginHanlder(ctx context.Context) {
 	c := &UserModel.User{}
-	//ceshi...
-	// account = "123123"
-	// password = "123123"
-	//ceshi over
 
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
@@ -39,7 +35,7 @@ func LoginHanlder(ctx context.Context) {
 		usersDB.Ping()
 		// 初始化数据库
 		_, _ = usersDB.Exec("CREATE TABLE IF NOT EXISTS users(name TEXT , databaseName TEXT , account TEXT , password TEXT,inviteCode TEXT,linkName TEXT)")
-		// 查询多条数据
+		// 查询单条数据
 		row := usersDB.QueryRow("SELECT name,databaseName,account,inviteCode,linkName FROM users WHERE account = ? AND password = ?", account, password)
 		var searchAccount, searchName, searchDatabaseName,searchInviteCode,searchLinkName string
 		err = row.Scan(&searchName, &searchDatabaseName, &searchAccount , &searchInviteCode,&searchLinkName) //遍历结果

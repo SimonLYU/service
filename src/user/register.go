@@ -27,7 +27,7 @@ func RegisterHanlder(ctx context.Context) {
 		password := Util.UnicodeEmojiCode(c.Password)
 		linkAccount := Util.UnicodeEmojiCode(c.LinkAccount)
 		linkInviteCode := Util.UnicodeEmojiCode(c.LinkInviteCode)
-		fmt.Printf("--%s,%s\n", linkAccount, linkInviteCode)
+		fmt.Printf("link info--%s,%s\nregisterInfo--%s,%s,%s\n", linkAccount, linkInviteCode,name,account,password)
 		//默认根据account生成本人的数据库
 		databaseName := "dbn_"
 		databaseName += account
@@ -36,13 +36,6 @@ func RegisterHanlder(ctx context.Context) {
 		//随机生成邀请码
 		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 		inviteCode := Util.UnicodeEmojiCode(fmt.Sprintf("%06v", rnd.Int31n(1000000)))
-
-		//ceshi...
-		// name = "111"
-		// account = "1231233312"
-		// password = "12312333"
-		// databaseName = account
-		//ceshi over
 
 		if len(password) == 0 || len(account) == 0 || len(name) == 0 {
 			fmt.Printf("注册失败:不能为空\n")
@@ -69,9 +62,9 @@ func RegisterHanlder(ctx context.Context) {
 			return
 		} else {
 			if len(linkAccount) != 0 && len(linkInviteCode) != 0 {
-				row := usersDB.QueryRow("SELECT account,name,databaseName,inviteCode FROM users WHERE account = ?", linkAccount)
-				var searchLinkAccount, searchLinkName, searchLinkDatabase, searchLinkInviteCode string
-				err = row.Scan(&searchLinkAccount, &searchLinkName, &searchLinkDatabase, &searchLinkInviteCode) //遍历结果
+				row := usersDB.QueryRow("SELECT linkName,databaseName,inviteCode FROM users WHERE account = ?", linkAccount)
+				var  searchLinkName, searchLinkDatabase, searchLinkInviteCode string
+				err = row.Scan(&searchLinkName, &searchLinkDatabase, &searchLinkInviteCode) //遍历结果
 				if err == nil {                                                                                 //查到了
 					if searchLinkInviteCode == linkInviteCode {
 						linkName = searchLinkName
