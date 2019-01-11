@@ -27,7 +27,6 @@ func RegisterHanlder(ctx context.Context) {
 		password := Util.UnicodeEmojiCode(c.Password)
 		linkAccount := Util.UnicodeEmojiCode(c.LinkAccount)
 		linkInviteCode := Util.UnicodeEmojiCode(c.LinkInviteCode)
-		fmt.Printf("link info--%s,%s\nregisterInfo--%s,%s,%s\n", linkAccount, linkInviteCode,name,account,password)
 		//默认根据account生成本人的数据库
 		databaseName := "dbn_"
 		databaseName += account
@@ -37,8 +36,12 @@ func RegisterHanlder(ctx context.Context) {
 		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 		inviteCode := Util.UnicodeEmojiCode(fmt.Sprintf("%06v", rnd.Int31n(1000000)))
 
+		fullTimeString := time.Now().String()
+		timeString := fullTimeString[:19]
+		fmt.Printf("TIME:%s --> ", timeString)
+
 		if len(password) == 0 || len(account) == 0 || len(name) == 0 {
-			fmt.Printf("注册失败:不能为空\n")
+			fmt.Printf("注册失败:不能为空->account:%s,password:%s\n",account,password)
 			ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败:信息不完整", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 			return
 		}
@@ -57,7 +60,7 @@ func RegisterHanlder(ctx context.Context) {
 		var searchAccount string
 		err = row.Scan(&searchAccount)            //遍历结果
 		if err == nil && len(searchAccount) > 0 { //查到了
-			fmt.Printf("手机号已经被注册\n")
+			fmt.Printf("手机号已经被注册->account:%s\n",account)
 			ctx.JSON(iris.Map{"errorCode": "501", "message": "手机号已经被注册", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 			return
 		} else {
@@ -70,29 +73,28 @@ func RegisterHanlder(ctx context.Context) {
 						linkName = searchLinkName
 						databaseName = searchLinkDatabase
 					} else {
-						fmt.Printf("link邀请码不正确,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
+						fmt.Printf("link邀请码不正确,name:%s\n\tdatabaseName:%s\n\taccount:%s\n\tpassword:%s\n\tinviteCode:%s\n\tlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 						ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 						return
 					}
-
 				} else {
-					fmt.Printf("link信息未查到,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
+					fmt.Printf("link信息未查到,name:%s\n\tdatabaseName:%s\n\taccount:%s\n\tpassword:%s\n\tinviteCode:%s\n\tlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 					ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 					return
 				}
 			} else if (len(linkAccount) == 0 && len(linkInviteCode) != 0) || len(linkAccount) != 0 && len(linkInviteCode) == 0 {
-				fmt.Printf("link填写不完整\n")
+				fmt.Printf("link填写不完整->linkAccount:%s,linkInviteCode:%s\n",linkAccount,linkInviteCode)
 				ctx.JSON(iris.Map{"errorCode": "501", "message": "对方账号或邀请码填写不正确", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 				return
 			}
 
 			_, err := usersDB.Exec("INSERT INTO users(name, databaseName, account, password,inviteCode,linkName) VALUES(?,?,?,?,?,?)", name, databaseName, account, password, inviteCode, linkName) //插入数据
 			if err == nil {
-				fmt.Printf("注册成功,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
+				fmt.Printf("注册成功,name:%s\n\tdatabaseName:%s\n\taccount:%s\n\tpassword:%s\n\tinviteCode:%s\n\tlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 				ctx.JSON(iris.Map{"errorCode": "0", "message": "注册成功,请登录", "name": name, "account": account, "databaseName": databaseName, "inviteCode": inviteCode, "linkName": linkName})
 				return
 			} else {
-				fmt.Printf("注册失败,name:%s\ndatabaseName:%s\naccount:%s\npassword:%s\ninviteCode:%s\nlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
+				fmt.Printf("注册失败,name:%s\n\tdatabaseName:%s\n\taccount:%s\n\tpassword:%s\n\tinviteCode:%s\n\tlinkName:%s\n", name, databaseName, account, password, inviteCode, linkName)
 				ctx.JSON(iris.Map{"errorCode": "500", "message": "注册失败", "name": "", "account": "", "databaseName": "", "inviteCode": "", "linkName": ""})
 				return
 			}

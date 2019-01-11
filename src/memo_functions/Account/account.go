@@ -17,16 +17,16 @@ import (
 func UpdateAccountListHandler(ctx context.Context) {
 
 	c := &AccountModel.Account{}
+	fullTimeString := time.Now().String()
+	timeString := fullTimeString[:19]
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-		fullTimeString := time.Now().String()
-		timeString := fullTimeString[:19]
+
 		fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报数据库:%s | 上报的列表:%#v\n", timeString, c.Name, c.DatabaseName, c.AccountList)
 		staticAccountList := c.AccountList
 		lastUpdateAccountName := c.Name
 		databaseName := c.DatabaseName
-		// databaseName = "accountList" //ceshi...
 		if len(databaseName) <= 0 {
 			fmt.Printf("databaseName为空!")
 			return
@@ -64,8 +64,6 @@ func UpdateAccountListHandler(ctx context.Context) {
 			value = Util.UnicodeEmojiCode(value)
 			_, err := stmt.Exec(value, lastUpdateAccountName)
 			if err != nil {
-				fullTimeString := time.Now().String()
-				timeString := fullTimeString[:19]
 				fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
 				tx.Rollback()
 			}
@@ -79,11 +77,12 @@ func UpdateAccountListHandler(ctx context.Context) {
 func GetAccountListHadnler(ctx context.Context) {
 
 	c := &AccountModel.GetAccount{}
+	fullTimeString := time.Now().String()
+	timeString := fullTimeString[:19]
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
 		databaseName := c.DatabaseName
-		// databaseName = "accountList" //ceshi...
 		if len(databaseName) <= 0 {
 			fmt.Printf("databaseName为空!")
 			return
@@ -117,14 +116,8 @@ func GetAccountListHadnler(ctx context.Context) {
 			scanError := infoRows.Scan(&info, &name)
 			Util.CheckError(scanError)
 			//emoji表情解码
-			fullTimeString := time.Now().String()
-			timeString := fullTimeString[:19]
-			fmt.Printf("TIME:%s --> 解码前数据:%s\n", timeString, info)
 			info = Util.UnicodeEmojiDecode(info)
-			fullTimeString = time.Now().String()
-			timeString = fullTimeString[:19]
 			fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, info)
-
 			staticAccountList = append(staticAccountList, info)
 		}
 		lastUpdateAccountName = Util.UnicodeEmojiDecode(name)
@@ -137,8 +130,6 @@ func GetAccountListHadnler(ctx context.Context) {
 			currentAccountList = staticAccountList
 		}
 
-		fullTimeString := time.Now().String()
-		timeString := fullTimeString[:19]
 		fmt.Printf("TIME:%s --> 账本最后上报人:%s\t | 响应的列表:%s\n", timeString, lastUpdateAccountName, currentAccountList)
 		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountList})
 	}

@@ -4,6 +4,7 @@ import (
 	"User/UserModel"
 	"Util"
 	"fmt"
+	"time"
 
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
@@ -20,8 +21,13 @@ func LoginHanlder(ctx context.Context) {
 	} else {
 		account := c.Account
 		password := c.Password
+		fullTimeString := time.Now().String()
+		timeString := fullTimeString[:19]
+		fmt.Printf("TIME:%s --> ", timeString)
 		fmt.Printf("登录请求->\nacount:%s\npassword:%s\n", account, password)
+		fmt.Printf("TIME:%s --> ", timeString)
 		if len(account) == 0 || len(password) == 0 {
+			fmt.Printf("信息不完整->account:%s,password:%s\n",account,password)
 			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:信息不完整", "name": "", "account": "", "databaseName": "","inviteCode":"","linkName":""})
 			return
 		}
@@ -46,10 +52,10 @@ func LoginHanlder(ctx context.Context) {
 		searchLinkName = Util.UnicodeEmojiDecode(searchLinkName)
 		// Util.CheckError(err)
 		if err == nil {
-			fmt.Printf("登录成功,name:%s\nacount:%s\ndatabaseName:%s\ninviteCode:%s\nlinkName:%s\n", searchName, searchAccount, searchDatabaseName,searchInviteCode,searchLinkName)
+			fmt.Printf("登录成功,name:%s\n\tacount:%s\n\tdatabaseName:%s\n\tinviteCode:%s\n\tlinkName:%s\n", searchName, searchAccount, searchDatabaseName,searchInviteCode,searchLinkName)
 			ctx.JSON(iris.Map{"errorCode": "0", "message": "登录成功", "name": searchName, "account": searchAccount, "databaseName": searchDatabaseName,"inviteCode":searchInviteCode,"linkName":searchLinkName})
 		} else {
-			fmt.Printf("登录失败,用户名或密码错误\n")
+			fmt.Printf("登录失败,用户名或密码错误->account:%s,password%s\n",account,password)
 			ctx.JSON(iris.Map{"errorCode": "502", "message": "登录失败:用户名或密码错误", "name": "", "account": "", "databaseName": "","inviteCode":"","linkName":""})
 		}
 	}

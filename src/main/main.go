@@ -31,7 +31,9 @@ func postForMemoListApp(){
 	//获取备忘录列表
 	app.Post("/getMemoList", Memory.GetMemoListHadnler)
 	//全量更新备忘录列表
-	app.Post("/setMemoList", Memory.SetMemoListHadnler)
+	app.Post("/setMemoList", Memory.UpdateMemoListHadnler)
+	//插入一条备忘(暂时不用)
+	app.Post("/insertToMemoList", Memory.InsertMemoListHadnler)
 	//全量更新账单列表
 	app.Post("/updateAccountList", Account.UpdateAccountListHandler)
 	//获取账单列表
@@ -42,6 +44,10 @@ func postForMemoListApp(){
 	app.Post("/register", User.RegisterHanlder)
 	//管更数据库
 	app.Post("/changeLinkDatabase", User.ChangeLinkDatabaseHandler)
+	//修改昵称
+	app.Post("/changeUserInfo", User.ChangeNameHandler)
+	//修改密码
+	app.Post("/changePassword", User.ChangePasswordHandler)
 
     app.Run(iris.Addr(":8081"))
 }

@@ -7,3 +7,9 @@ type User struct {
 	LinkInviteCode string
 	LinkAccount string
 }
+
+type Password struct {
+	Account 	string
+	OldPassword string
+	NewPassword	string
+}
