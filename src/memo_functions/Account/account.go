@@ -72,6 +72,134 @@ func UpdateAccountListHandler(ctx context.Context) {
 
 		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": staticAccountList})
 	}
+
+}
+
+func InsertAccountListHandler(ctx context.Context) {
+
+	c := &AccountModel.SingleAccount{}
+	fullTimeString := time.Now().String()
+	timeString := fullTimeString[:19]
+	if err := ctx.ReadJSON(c); err != nil {
+		panic(err.Error())
+	} else {
+
+		fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报数据库:%s | 上报的单条:%#v\n", timeString, c.Name, c.DatabaseName, c.Account)
+		currentAccountInfo := c.Account
+		lastUpdateAccountName := c.Name
+		databaseName := c.DatabaseName
+		if len(databaseName) <= 0 {
+			fmt.Printf("databaseName为空!")
+			return
+		}
+		//处理db
+		db, openError := sql.Open("mysql", "root:simon.1314@/account?charset=utf8") //本地数据库用户名root,密码:simon.1314
+		Util.CheckError(openError)
+		defer db.Close() //函数末关闭数据库
+		
+		// 设置最大打开的连接数，默认值为0表示不限制。
+		db.SetMaxOpenConns(100)
+		// 用于设置闲置的连接数。
+		db.SetMaxIdleConns(50)
+		db.Ping()
+		create := "Create Table If Not Exists "
+		create += databaseName
+		create += "(info TEXT , name TEXT)"
+		_, execError2 := db.Exec(create)
+		Util.CheckError(execError2)
+
+		selectExec := "SELECT info,name FROM "
+		selectExec += databaseName
+		selectExec += " where(info='"
+		selectExec += currentAccountInfo
+		selectExec += "' AND name='"
+		selectExec += lastUpdateAccountName
+		selectExec += "')"
+		fmt.Printf(selectExec)
+		infoRows, queryInfoError := db.Query(selectExec)
+		Util.CheckError(queryInfoError)
+		if infoRows.Next() {
+			fmt.Printf("添加重复字段\n")
+			ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountInfo})
+			return;
+		}
+ 
+		//这边事物内批量数据插入
+		tx, dbError := db.Begin()
+		Util.CheckError(dbError)
+		insert := "INSERT INTO "
+		insert += databaseName
+		insert += "(info,name) values(?,?)"
+		stmt, prepareError := tx.Prepare(insert)
+		Util.CheckError(prepareError)
+
+		value := Util.UnicodeEmojiCode(currentAccountInfo)
+		_, err := stmt.Exec(value, lastUpdateAccountName)
+		if err != nil {
+			fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
+			tx.Rollback()
+		}
+
+		tx.Commit()
+		
+		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountInfo})
+	}
+	
+}
+
+func DeleteAccountListHandler(ctx context.Context) {
+
+	c := &AccountModel.SingleAccount{}
+	fullTimeString := time.Now().String()
+	timeString := fullTimeString[:19]
+	if err := ctx.ReadJSON(c); err != nil {
+		panic(err.Error())
+	} else {
+
+		fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报数据库:%s | 删除的单条:%#v\n", timeString, c.Name, c.DatabaseName, c.Account)
+		currentAccountInfo := c.Account
+		lastUpdateAccountName := c.Name
+		databaseName := c.DatabaseName
+		if len(databaseName) <= 0 {
+			fmt.Printf("databaseName为空!")
+			return
+		}
+		//处理db
+		db, openError := sql.Open("mysql", "root:simon.1314@/account?charset=utf8") //本地数据库用户名root,密码:simon.1314
+		Util.CheckError(openError)
+		defer db.Close() //函数末关闭数据库
+		
+		// 设置最大打开的连接数，默认值为0表示不限制。
+		db.SetMaxOpenConns(100)
+		// 用于设置闲置的连接数。
+		db.SetMaxIdleConns(50)
+		db.Ping()
+		create := "Create Table If Not Exists "
+		create += databaseName
+		create += "(info TEXT , name TEXT)"
+		_, execError2 := db.Exec(create)
+		Util.CheckError(execError2)
+
+		//这边事物内批量数据插入
+		tx, dbError := db.Begin()
+		Util.CheckError(dbError)
+		insert := "delete from "
+		insert += databaseName
+		insert += " where(info=? AND name=?)"
+		stmt, prepareError := tx.Prepare(insert)
+		Util.CheckError(prepareError)
+
+		value := Util.UnicodeEmojiCode(currentAccountInfo)
+		_, err := stmt.Exec(value, lastUpdateAccountName)
+		if err != nil {
+			fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
+			tx.Rollback()
+		}
+		tx.Commit()
+
+		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountInfo})
+	}
+	
 }
 
 func GetAccountListHadnler(ctx context.Context) {

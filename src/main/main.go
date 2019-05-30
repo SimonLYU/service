@@ -38,6 +38,10 @@ func postForMemoListApp(){
 	app.Post("/updateAccountList", Account.UpdateAccountListHandler)
 	//获取账单列表
 	app.Post("/getAccountList", Account.GetAccountListHadnler)
+	//插入一条账单列表
+	app.Post("/insertAccountList", Account.InsertAccountListHandler)
+	//删除一条账单列表
+	app.Post("/deleteAccountList", Account.DeleteAccountListHandler)
 	//登录
 	app.Post("/login", User.LoginHanlder)
 	//注册
