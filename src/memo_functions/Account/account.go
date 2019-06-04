@@ -22,13 +22,13 @@ func UpdateAccountListHandler(ctx context.Context) {
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-
-		fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报数据库:%s | 上报的列表:%#v\n", timeString, c.Name, c.DatabaseName, c.AccountList)
+		fmt.Printf("TIME:%s -->UpdateAccountList 开始获取数据\n", timeString)
+		fmt.Printf("TIME:%s -->UpdateAccountList 账本上报人:%s\t | 上报数据库:%s\n", timeString, c.Name, c.DatabaseName)
 		staticAccountList := c.AccountList
 		lastUpdateAccountName := c.Name
 		databaseName := c.DatabaseName
 		if len(databaseName) <= 0 {
-			fmt.Printf("databaseName为空!")
+			fmt.Printf("databaseName为空!\n")
 			return
 		}
 		//处理db
@@ -62,6 +62,7 @@ func UpdateAccountListHandler(ctx context.Context) {
 		Util.CheckError(prepareError)
 		for _, value := range staticAccountList {
 			value = Util.UnicodeEmojiCode(value)
+			// fmt.Printf("TIME:%s -->UpdateAccountList 解码后数据:%s\n", timeString, value)
 			_, err := stmt.Exec(value, lastUpdateAccountName)
 			if err != nil {
 				fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
@@ -69,7 +70,8 @@ func UpdateAccountListHandler(ctx context.Context) {
 			}
 		}
 		tx.Commit()
-
+		fmt.Printf("TIME:%s -->UpdateAccountList 解码后数据长度:%d\n", timeString, len(staticAccountList))
+		fmt.Printf("TIME:%s -->UpdateAccountList 结束全量更新数据\n", timeString)
 		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": staticAccountList})
 	}
 
@@ -84,12 +86,12 @@ func InsertAccountListHandler(ctx context.Context) {
 		panic(err.Error())
 	} else {
 
-		fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报数据库:%s | 上报的单条:%#v\n", timeString, c.Name, c.DatabaseName, c.Account)
+		fmt.Printf("TIME:%s -->InsertAccountList 账本上报人:%s\t | 上报数据库:%s | 上报的单条:%#v\n", timeString, c.Name, c.DatabaseName, c.Account)
 		currentAccountInfo := c.Account
 		lastUpdateAccountName := c.Name
 		databaseName := c.DatabaseName
 		if len(databaseName) <= 0 {
-			fmt.Printf("databaseName为空!")
+			fmt.Printf("databaseName为空!\n")
 			return
 		}
 		//处理db
@@ -115,7 +117,6 @@ func InsertAccountListHandler(ctx context.Context) {
 		selectExec += "' AND name='"
 		selectExec += lastUpdateAccountName
 		selectExec += "')"
-		fmt.Printf(selectExec)
 		infoRows, queryInfoError := db.Query(selectExec)
 		Util.CheckError(queryInfoError)
 		if infoRows.Next() {
@@ -136,12 +137,12 @@ func InsertAccountListHandler(ctx context.Context) {
 		value := Util.UnicodeEmojiCode(currentAccountInfo)
 		_, err := stmt.Exec(value, lastUpdateAccountName)
 		if err != nil {
-			fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
+			fmt.Printf("TIME:%s -->InsertAccountList 出现错误回滚，错误信息：%v\n", timeString, err)
 			tx.Rollback()
 		}
 
 		tx.Commit()
-		
+		fmt.Printf("TIME:%s -->InsertAccountList 结束请求\n", timeString)
 		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountInfo})
 	}
 	
@@ -156,12 +157,12 @@ func DeleteAccountListHandler(ctx context.Context) {
 		panic(err.Error())
 	} else {
 
-		fmt.Printf("TIME:%s --> 账本上报人:%s\t | 上报数据库:%s | 删除的单条:%#v\n", timeString, c.Name, c.DatabaseName, c.Account)
+		fmt.Printf("TIME:%s -->DeleteAccountList 账本上报人:%s\t | 上报数据库:%s | 删除的单条:%#v\n", timeString, c.Name, c.DatabaseName, c.Account)
 		currentAccountInfo := c.Account
 		lastUpdateAccountName := c.Name
 		databaseName := c.DatabaseName
 		if len(databaseName) <= 0 {
-			fmt.Printf("databaseName为空!")
+			fmt.Printf("databaseName为空!\n")
 			return
 		}
 		//处理db
@@ -192,11 +193,11 @@ func DeleteAccountListHandler(ctx context.Context) {
 		value := Util.UnicodeEmojiCode(currentAccountInfo)
 		_, err := stmt.Exec(value, lastUpdateAccountName)
 		if err != nil {
-			fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
+			fmt.Printf("TIME:%s -->DeleteAccountList 出现错误回滚，错误信息：%v\n", timeString, err)
 			tx.Rollback()
 		}
 		tx.Commit()
-
+		fmt.Printf("TIME:%s -->DeleteAccountList 结束请求\n", timeString)
 		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountInfo})
 	}
 	
@@ -239,13 +240,14 @@ func GetAccountListHadnler(ctx context.Context) {
 		infoRows, queryInfoError := memoryDB.Query(selectExec)
 		Util.CheckError(queryInfoError)
 		// 对多条数据进行遍历
+		fmt.Printf("TIME:%s -->GetAccountList 开始获取数据\n", timeString)
 		var info, name string
 		for infoRows.Next() {
 			scanError := infoRows.Scan(&info, &name)
 			Util.CheckError(scanError)
 			//emoji表情解码
 			info = Util.UnicodeEmojiDecode(info)
-			fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, info)
+			// fmt.Printf("TIME:%s -->GetAccountList 解码后数据:%s\n", timeString, info)
 			staticAccountList = append(staticAccountList, info)
 		}
 		lastUpdateAccountName = Util.UnicodeEmojiDecode(name)
@@ -257,8 +259,9 @@ func GetAccountListHadnler(ctx context.Context) {
 		} else {
 			currentAccountList = staticAccountList
 		}
-
-		fmt.Printf("TIME:%s --> 账本最后上报人:%s\t | 响应的列表:%s\n", timeString, lastUpdateAccountName, currentAccountList)
+		fmt.Printf("TIME:%s -->GetAccountList 解码后数据长度:%d\n", timeString, len(currentAccountList))
+		fmt.Printf("TIME:%s -->GetAccountList 账本最后上报人:%s\n", timeString, lastUpdateAccountName)
+		fmt.Printf("TIME:%s -->GetAccountList 结束获取数据\n", timeString)
 		ctx.JSON(iris.Map{"name": lastUpdateAccountName, "accountList": currentAccountList})
 	}
 }

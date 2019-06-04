@@ -23,7 +23,7 @@ func GetMemoListHadnler(ctx context.Context) {
 	} else {
 		databaseName := c.DatabaseName
 		if len(databaseName) <= 0 {
-			fmt.Printf("databaseName为空!")
+			fmt.Printf("GetMemoList databaseName为空!\n")
 			return
 		}
 
@@ -55,7 +55,7 @@ func GetMemoListHadnler(ctx context.Context) {
 			Util.CheckError(scanError)
 			//emoji表情解码
 			memo = Util.UnicodeEmojiDecode(memo)
-			fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, memo)
+			// fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, memo)
 
 			staticMemoList = append(staticMemoList, memo)
 		}
@@ -70,7 +70,7 @@ func GetMemoListHadnler(ctx context.Context) {
 			currentMemoList = staticMemoList
 		}
 
-		fmt.Printf("TIME:%s --> 购物车最后上报人:%s\t | 响应的列表:%s\n", timeString, lastSetName, currentMemoList)
+		fmt.Printf("TIME:%s -->GetMemoList 购物车最后上报人:%s\t | 响应的列表:%s\n", timeString, lastSetName, currentMemoList)
 		ctx.JSON(iris.Map{"name": lastSetName, "memoList": currentMemoList})
 	}
 }
@@ -82,12 +82,12 @@ func UpdateMemoListHadnler(ctx context.Context) {
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-		fmt.Printf("TIME:%s --> 购物车上报人:%s\t | 上报的列表:%#v\n", timeString, c.Name, c.MemoList)
+		fmt.Printf("TIME:%s -->UpdateMemo 购物车上报人:%s\t | 上报的列表:%#v\n", timeString, c.Name, c.MemoList)
 		staticMemoList := c.MemoList
 		lastSetName := c.Name
 		databaseName := c.DatabaseName
 		if len(databaseName) <= 0 {
-			fmt.Printf("databaseName为空!")
+			fmt.Printf("UpdateMemo databaseName为空!\n")
 			return
 		}
 		//处理db
@@ -124,7 +124,7 @@ func UpdateMemoListHadnler(ctx context.Context) {
 
 			_, err := stmt.Exec(value, lastSetName)
 			if err != nil {
-				fmt.Printf("TIME:%s --> 出现错误回滚，错误信息：%v\n", timeString, err)
+				fmt.Printf("TIME:%s -->UpdateMemo 出现错误回滚，错误信息：%v\n", timeString, err)
 				tx.Rollback()
 			}
 		}
@@ -141,12 +141,12 @@ func InsertMemoListHadnler(ctx context.Context) {
 	if err := ctx.ReadJSON(c); err != nil {
 		panic(err.Error())
 	} else {
-		fmt.Printf("TIME:%s --> 购物车上报人:%s\t | 上报的列表:%#v\n", timeString, c.Name, c.Memo)
+		fmt.Printf("TIME:%s -->InsertMemoList 购物车上报人:%s\t | 上报的单条:%#v\n", timeString, c.Name, c.Memo)
 		staticMemo := c.Memo
 		lastSetName := c.Name
 		databaseName := c.DatabaseName
 		if len(databaseName) <= 0 {
-			fmt.Printf("databaseName为空!")
+			fmt.Printf("InsertMemoList databaseName为空!\n")
 			return
 		}
 		//处理db
@@ -190,7 +190,7 @@ func InsertMemoListHadnler(ctx context.Context) {
 			Util.CheckError(scanError)
 			//emoji表情解码
 			memo = Util.UnicodeEmojiDecode(memo)
-			fmt.Printf("TIME:%s --> 解码后数据:%s\n", timeString, memo)
+			// fmt.Printf("TIME:%s -->InsertMemoList 解码后数据:%s\n", timeString, memo)
 
 			staticMemoList = append(staticMemoList, memo)
 		}
@@ -204,7 +204,7 @@ func InsertMemoListHadnler(ctx context.Context) {
 		} else {
 			currentMemoList = staticMemoList
 		}
-
+		fmt.Printf("TIME:%s -->InsertMemoList 返回的数据:%s\n", timeString, currentMemoList)
 		ctx.JSON(iris.Map{"name": lastSetName, "memoList": currentMemoList})
 	}
 }
